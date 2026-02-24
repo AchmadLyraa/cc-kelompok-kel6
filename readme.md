@@ -1,3 +1,59 @@
+# ☁️ Cloud App - [Nama Proyek Tim Anda]
+
+Deskripsi singkat aplikasi (1-2 paragraf): apa yang dilakukan, 
+untuk siapa, masalah apa yang diselesaikan.
+
+## 👥 Tim
+
+| Nama | NIM | Peran |
+|------|-----|-------|
+| Achmad Bayhaqi | 10231001 | Lead Backend |
+| Indah Nur Fortuna | 10231044 | Lead Frontend |
+| Alfiani Dwiyuniarti | 10231010 | Lead Container |
+| Zahwa Hanna Dwi Putri | 10231092 | Lead CI/CD & Deploy |
+| Nilam Ayu NandaStari Romdoni | 10231070 | Lead QA & Docs |
+
+## 🛠️ Tech Stack
+
+| Teknologi | Fungsi |
+|-----------|--------|
+| FastAPI   | Backend REST API |
+| React     | Frontend SPA |
+| PostgreSQL | Database |
+| Docker    | Containerization |
+| GitHub Actions | CI/CD |
+| Railway/Render | Cloud Deployment |
+
+## 🏗️ Architecture
+
+```
+[React Frontend] <--HTTP--> [FastAPI Backend] <--SQL--> [PostgreSQL]
+```
+
+*(Diagram ini akan berkembang setiap minggu)*
+
+## 🚀 Getting Started
+
+### Prasyarat
+- Python 3.10+
+- Node.js 18+
+- Git
+
+### Backend
+```bash
+cd backend
+pip install -r requirements.txt
+uvicorn main:app --reload --port 8000
+```
+
+### Frontend
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+
 # Back-end Setup
 
 bikin folder `venv/:
