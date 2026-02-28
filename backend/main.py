@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from database import engine, get_db
 from models import Base
-from schemas import ItemCreate, ItemUpdate, ItemResponse, ItemListResponse
+from schemas import ItemCreate, ItemUpdate, ItemResponse, ItemListResponse, ItemStats
 import crud
 
 # Buat semua tabel di database (jika belum ada)
@@ -74,6 +74,10 @@ def list_items(
     """
     return crud.get_items(db=db, skip=skip, limit=limit, search=search)
 
+@app.get("/items/stats", response_model=ItemStats)
+def items_stats(db: Session = Depends(get_db)):
+    """Statistik inventory."""
+    return crud.get_stats(db=db)
 
 @app.get("/items/{item_id}", response_model=ItemResponse)
 def get_item(item_id: int, db: Session = Depends(get_db)):

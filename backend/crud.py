@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
+from sqlalchemy import func
 from models import Item
 from schemas import ItemCreate, ItemUpdate
 
@@ -71,3 +72,19 @@ def delete_item(db: Session, item_id: int) -> bool:
     db.delete(db_item)
     db.commit()
     return True
+
+def get_stats(db: Session):
+    total = db.query(func.count(Item.id)).scalar() or 0
+    if total == 0:
+        return {"total_items": 0, "total_value": 0, "most_expensive": None, "cheapest": None}
+
+    total_value = db.query(func.sum(Item.price * Item.quantity)).scalar() or 0
+    most_expensive = db.query(Item).order_by(Item.price.desc()).first()
+    cheapest = db.query(Item).order_by(Item.price.asc()).first()
+
+    return {
+        "total_items": total,
+        "total_value": total_value,
+        "most_expensive": most_expensive,
+        "cheapest": cheapest,
+    }
