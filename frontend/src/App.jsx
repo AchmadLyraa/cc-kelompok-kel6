@@ -3,15 +3,25 @@ import Header from "./components/Header";
 import SearchBar from "./components/SearchBar";
 import ItemForm from "./components/ItemForm";
 import ItemList from "./components/ItemList";
+import LoginPage from "./components/LoginPage";
+import Toast from "./components/Toast";
 import {
   fetchItems,
   createItem,
   updateItem,
   deleteItem,
   checkHealth,
+  login,
+  register,
+  setToken,
+  clearToken,
 } from "./services/api";
 
 function App() {
+  // ==================== AUTH STATE ====================
+  const [user, setUser] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
   // ==================== STATE ====================
   const [items, setItems] = useState([]);
   const [totalItems, setTotalItems] = useState(0);
@@ -20,6 +30,7 @@ function App() {
   const [editingItem, setEditingItem] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("name");
+  const [toast, setToast] = useState(null);
 
   // ==================== LOAD DATA ====================
   const loadItems = useCallback(async (search = "") => {
@@ -29,6 +40,9 @@ function App() {
       setItems(data.items);
       setTotalItems(data.total);
     } catch (err) {
+      if (err.message === "UNAUTHORIZED") {
+        handleLogout();
+      }
       console.error("Error loading items:", err);
     } finally {
       setLoading(false);
@@ -36,26 +50,61 @@ function App() {
   }, []);
 
   // ==================== ON MOUNT ====================
-  useEffect(() => {
-    // Cek koneksi API
-    checkHealth().then(setIsConnected);
-    // Load items
-    loadItems();
-  }, [loadItems]);
 
-  // ==================== HANDLERS ====================
+  useEffect(() => {
+    checkHealth().then(setIsConnected);
+  }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadItems();
+    }
+  }, [isAuthenticated, loadItems]);
+
+  // ==================== AUTH HANDLERS ====================
+
+  const handleLogin = async (email, password) => {
+    const data = await login(email, password);
+    setUser(data.user);
+    setIsAuthenticated(true);
+  };
+
+  const handleRegister = async (userData) => {
+    // Register lalu otomatis login
+    await register(userData);
+    await handleLogin(userData.email, userData.password);
+  };
+
+  const handleLogout = () => {
+    clearToken();
+    setUser(null);
+    setIsAuthenticated(false);
+    setItems([]);
+    setTotalItems(0);
+    setEditingItem(null);
+    setSearchQuery("");
+  };
+
+  // ==================== ITEM HANDLERS ====================
+
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
+  };
 
   const handleSubmit = async (itemData, editId) => {
-    if (editId) {
-      // Mode edit
-      await updateItem(editId, itemData);
-      setEditingItem(null);
-    } else {
-      // Mode create
-      await createItem(itemData);
+    try {
+      if (editId) {
+        await updateItem(editId, itemData);
+        showToast("Item berhasil diupdate!");
+        setEditingItem(null);
+      } else {
+        await createItem(itemData);
+        showToast("Item berhasil ditambahkan!");
+      }
+      loadItems(searchQuery);
+    } catch (err) {
+      showToast(err.message, "error");
     }
-    // Reload daftar items
-    loadItems(searchQuery);
   };
 
   const handleEdit = (item) => {
@@ -70,9 +119,10 @@ function App() {
 
     try {
       await deleteItem(id);
+      showToast("Item berhasil dihapus!");
       loadItems(searchQuery);
     } catch (err) {
-      alert("Gagal menghapus: " + err.message);
+      showToast("Gagal menghapus: " + err.message, "error");
     }
   };
 
@@ -103,32 +153,49 @@ function App() {
   });
 
   // ==================== RENDER ====================
+  // Jika belum login, tampilkan login page
+
+  if (!isAuthenticated) {
+    return <LoginPage onLogin={handleLogin} onRegister={handleRegister} />;
+  }
+
   return (
-    <div style={styles.app}>
-      <div style={styles.container}>
-        <Header totalItems={totalItems} isConnected={isConnected} />
-        <ItemForm
-          onSubmit={handleSubmit}
-          editingItem={editingItem}
-          onCancelEdit={handleCancelEdit}
+    <>
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
         />
-        <SearchBar onSearch={handleSearch} />
-        <div style={{ margin: "1rem 0" }}>
-          <label style={{ marginRight: "0.5rem" }}>Urutkan berdasarkan:</label>
-          <select value={sortBy} onChange={handleSortChange}>
-            <option value="name">Nama</option>
-            <option value="price">Harga</option>
-            <option value="newest">Terbaru</option>
-          </select>
+      )}
+      <div style={styles.app}>
+        <div style={styles.container}>
+          <Header totalItems={totalItems} isConnected={isConnected} />
+          <ItemForm
+            onSubmit={handleSubmit}
+            editingItem={editingItem}
+            onCancelEdit={handleCancelEdit}
+          />
+          <SearchBar onSearch={handleSearch} />
+          <div style={{ margin: "1rem 0" }}>
+            <label style={{ marginRight: "0.5rem" }}>
+              Urutkan berdasarkan:
+            </label>
+            <select value={sortBy} onChange={handleSortChange}>
+              <option value="name">Nama</option>
+              <option value="price">Harga</option>
+              <option value="newest">Terbaru</option>
+            </select>
+          </div>
+          <ItemList
+            items={sortedItems}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            loading={loading}
+          />
         </div>
-        <ItemList
-          items={sortedItems}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          loading={loading}
-        />
       </div>
-    </div>
+    </>
   );
 }
 

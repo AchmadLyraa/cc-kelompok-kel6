@@ -8,6 +8,7 @@ function ItemForm({ onSubmit, editingItem, onCancelEdit }) {
     quantity: "0",
   });
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   // Jika editingItem berubah, isi form dengan datanya
   useEffect(() => {
@@ -51,11 +52,13 @@ function ItemForm({ onSubmit, editingItem, onCancelEdit }) {
     };
 
     try {
+      setLoading(true);
       await onSubmit(itemData, editingItem?.id);
-      // Reset form setelah berhasil
       setFormData({ name: "", description: "", price: "", quantity: "0" });
     } catch (err) {
       setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -121,8 +124,12 @@ function ItemForm({ onSubmit, editingItem, onCancelEdit }) {
         </div>
 
         <div style={styles.actions}>
-          <button type="submit" style={styles.btnSubmit}>
-            {editingItem ? "💾 Update Item" : "➕ Tambah Item"}
+          <button type="submit" style={styles.btnSubmit} disabled={loading}>
+            {loading
+              ? "⏳ Menyimpan..."
+              : editingItem
+                ? "💾 Update Item"
+                : "➕ Tambah Item"}
           </button>
           {editingItem && (
             <button
