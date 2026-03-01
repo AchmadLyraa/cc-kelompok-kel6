@@ -1,0 +1,52 @@
+=== Start
+sudo systemctl start docker
+sudo systemctl stop docker
+
+=== Biar otomatis jalan saat boot:
+sudo systemctl enable docker
+sudo systemctl disable docker
+
+=== Cek status
+sudo systemctl status docker
+
+=== Lihat semua container
+docker ps
+docker ps -a
+
+=== Lihat semua image
+docker images
+docker images | grep <nama-image>
+
+
+=== Hapus container
+docker rm <container-id>
+docker container prune  [semua!]
+docker system prune -a   [semua container-image]
+
+=== Hapus image
+docker rmi <image-id>
+docker rmi -f <image-id>
+docker image prune -a  [semua!]
+
+
+
+----======= Build =======----
+
+sudo systemctl stop postgresql
+
+=== Build Image
+docker build .
+docker build -t cloudapp-backend:v1 .
+
+docker run -p 8000:8000 --env-file .env cloudapp-backend:v1
+
+=== Build with docker-compose.yml
+-> Dockerfile -> docker-compose.yml -> docker compose up
+docker compose up --build
+docker compose up
+docker compose down
+
+docker compose start
+docker compose stop
+
+docker compose exec db psql -U postgres -d cloudapp
