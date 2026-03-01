@@ -19,6 +19,7 @@ function App() {
   const [isConnected, setIsConnected] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState("name");
 
   // ==================== LOAD DATA ====================
   const loadItems = useCallback(async (search = "") => {
@@ -84,6 +85,23 @@ function App() {
     setEditingItem(null);
   };
 
+  const handleSortChange = (e) => {
+    setSortBy(e.target.value);
+  };
+
+  const sortedItems = [...items].sort((a, b) => {
+    if (sortBy === "name") {
+      return a.name.localeCompare(b.name);
+    }
+    if (sortBy === "price") {
+      return a.price - b.price;
+    }
+    if (sortBy === "newest") {
+      return new Date(b.created_at) - new Date(a.created_at);
+    }
+    return 0;
+  });
+
   // ==================== RENDER ====================
   return (
     <div style={styles.app}>
@@ -95,8 +113,16 @@ function App() {
           onCancelEdit={handleCancelEdit}
         />
         <SearchBar onSearch={handleSearch} />
+        <div style={{ margin: "1rem 0" }}>
+          <label style={{ marginRight: "0.5rem" }}>Urutkan berdasarkan:</label>
+          <select value={sortBy} onChange={handleSortChange}>
+            <option value="name">Nama</option>
+            <option value="price">Harga</option>
+            <option value="newest">Terbaru</option>
+          </select>
+        </div>
         <ItemList
-          items={items}
+          items={sortedItems}
           onEdit={handleEdit}
           onDelete={handleDelete}
           loading={loading}
