@@ -40,9 +40,15 @@ async function handleResponse(response) {
   }
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
+
+    // FastAPI validation error (422) — detail berupa array
+    if (Array.isArray(error.detail)) {
+      const messages = error.detail.map((e) => e.msg).join(", ");
+      throw new Error(messages);
+    }
+
     throw new Error(error.detail || `Request gagal (${response.status})`);
   }
-  // 204 No Content
   if (response.status === 204) return null;
   return response.json();
 }

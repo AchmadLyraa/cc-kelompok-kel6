@@ -15,12 +15,15 @@ import {
   register,
   setToken,
   clearToken,
+  getToken,
+  getMe,
 } from "./services/api";
 
 function App() {
   // ==================== AUTH STATE ====================
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   // ==================== STATE ====================
   const [items, setItems] = useState([]);
@@ -60,6 +63,25 @@ function App() {
       loadItems();
     }
   }, [isAuthenticated, loadItems]);
+
+  useEffect(() => {
+    const token = getToken();
+    if (token) {
+      getMe()
+        .then((userData) => {
+          setUser(userData);
+          setIsAuthenticated(true);
+        })
+        .catch(() => {
+          clearToken();
+        })
+        .finally(() => {
+          setIsCheckingAuth(false); // selesai cek
+        });
+    } else {
+      setIsCheckingAuth(false); // gak ada token, langsung selesai
+    }
+  }, []);
 
   // ==================== AUTH HANDLERS ====================
 
@@ -154,6 +176,10 @@ function App() {
 
   // ==================== RENDER ====================
   // Jika belum login, tampilkan login page
+  //
+  if (isCheckingAuth) {
+    return null; // atau loading spinner
+  }
 
   if (!isAuthenticated) {
     return <LoginPage onLogin={handleLogin} onRegister={handleRegister} />;
@@ -170,7 +196,12 @@ function App() {
       )}
       <div style={styles.app}>
         <div style={styles.container}>
-          <Header totalItems={totalItems} isConnected={isConnected} />
+          <Header
+            totalItems={totalItems}
+            isConnected={isConnected}
+            user={user}
+            onLogout={handleLogout}
+          />
           <ItemForm
             onSubmit={handleSubmit}
             editingItem={editingItem}
