@@ -3,6 +3,8 @@ Konfigurasi test — setup database test terpisah dari database utama.
 """
 import os
 os.environ["DATABASE_URL"] = "sqlite:///./test.db"
+os.environ["SECRET_KEY"] = "testsecretkey123"
+os.environ["ALGORITHM"] = "HS256"
 
 import pytest
 from fastapi.testclient import TestClient
