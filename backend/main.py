@@ -8,7 +8,7 @@ from database import engine, get_db
 from models import Base, User
 from schemas import (
     ItemCreate, ItemUpdate, ItemResponse, ItemListResponse,
-    UserCreate, UserResponse, LoginRequest, TokenResponse,
+    UserCreate, UserResponse, LoginRequest, TokenResponse, ItemStats
 )
 from auth import create_access_token, get_current_user
 import crud
@@ -109,6 +109,14 @@ def list_items(
 ):
     """Ambil daftar items. **Membutuhkan autentikasi.**"""
     return crud.get_items(db=db, skip=skip, limit=limit, search=search)
+
+@app.get("/items/stats", response_model=ItemStats)
+def get_item_stats(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Statistik items. **Membutuhkan autentikasi.**"""
+    return crud.get_stats(db=db)
 
 
 @app.get("/items/{item_id}", response_model=ItemResponse)
