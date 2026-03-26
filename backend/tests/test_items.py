@@ -95,3 +95,54 @@ def test_search_items(client, auth_headers):
     data = response.json()
     assert data["total"] >= 1
     assert any("laptop" in item["name"].lower() for item in data["items"])
+
+def test_pagination(client, auth_headers):
+    """Test pagination skip & limit."""
+    for i in range(5):
+        client.post("/items", json={
+            "name": f"Item {i}", "price": 10000, "quantity": 1
+        }, headers=auth_headers)
+    response = client.get("/items?skip=0&limit=2", headers=auth_headers)
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["items"]) == 2
+    assert data["total"] >= 5
+
+def test_get_stats(client, auth_headers):
+    """Test endpoint stats."""
+    client.post("/items", json={
+        "name": "Mahal", "price": 50000000, "quantity": 1
+    }, headers=auth_headers)
+    client.post("/items", json={
+        "name": "Murah", "price": 10000, "quantity": 1
+    }, headers=auth_headers)
+    response = client.get("/items/stats", headers=auth_headers)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total_items"] >= 2
+    assert data["most_expensive"]["name"] == "Mahal"
+    assert data["cheapest"]["name"] == "Murah"
+
+def test_get_stats_empty(client, auth_headers):
+    """Test stats ketika tidak ada item."""
+    response = client.get("/items/stats", headers=auth_headers)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total_items"] == 0
+    assert data["most_expensive"] is None
+
+def test_create_item_invalid_price(client, auth_headers):
+    """Test create item dengan harga 0 → 422."""
+    response = client.post("/items", json={
+        "name": "Item", "price": 0, "quantity": 1
+    }, headers=auth_headers)
+    assert response.status_code == 422
+
+def test_register_invalid_password(client):
+    """Test register password tanpa huruf besar → 422."""
+    response = client.post("/auth/register", json={
+        "email": "test@example.com",
+        "password": "nohurufbesar1",
+        "name": "Test"
+    })
+    assert response.status_code == 422
