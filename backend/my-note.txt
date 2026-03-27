@@ -51,3 +51,12 @@ docker compose start
 docker compose stop
 
 docker compose exec db psql -U postgres -d cloudapp
+
+
+Forward proxy:
+Client → Proxy → Internet/Server
+Proxy mewakili client — server gak tau siapa client aslinya.
+
+Reverse proxy:
+Internet/Client → Proxy → Server
+Proxy mewakili server — client gak tau siapa server aslinya.
