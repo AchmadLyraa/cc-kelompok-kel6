@@ -2,8 +2,9 @@
 import socket, time, sys
 import subprocess
 
-host = "db"
-port = 5432
+import os
+host = os.environ.get("DB_HOST", "db")
+port = int(os.environ.get("DB_PORT", "5432"))
 
 # tunggu database
 for i in range(30):
