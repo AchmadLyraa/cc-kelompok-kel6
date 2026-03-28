@@ -1,87 +1,98 @@
-# ============================================================
-# Docker Compose — Cloud App
-# Komputasi Awan — SI ITK
-# ============================================================
-# Usage:
-#   docker compose up -d          # Start semua services
-#   docker compose down            # Stop & remove
-#   docker compose logs -f         # Lihat logs
-#   docker compose ps              # Status services
-# ============================================================
+# ==============================================
+# Docker Compose — Microservices Architecture
+# Cloud Team XX
+# ==============================================
+# Services:
+# 1. auth-db: PostgreSQL untuk Auth Service
+# 2. item-db: PostgreSQL untuk Item Service
+# 3. auth-service: Authentication (port 8001)
+# 4. item-service: Inventory CRUD (port 8002)
+# 5. frontend: React app (port 3000)
+# 6. gateway: Nginx reverse proxy (port 80)
 
 services:
-  # ==================== DATABASE ====================
-  db:
+  # ================================
+  # DATABASES (Database per Service)
+  # ================================
+  auth-db:
     image: postgres:16-alpine
-    container_name: cloudapp-db
-    restart: unless-stopped
-    env_file:
-      - ./backend/.env
-    ports:
-      - "5433:5432"
+    environment:
+      POSTGRES_DB: auth_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
     volumes:
-      - pgdata:/var/lib/postgresql/data
-    networks:
-      - cloudnet
+      - auth_db_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d cloudapp"]
-      interval: 10s
-      timeout: 5s
+      test: ["CMD-SHELL", "pg_isready -U postgres -d auth_db"]
+      interval: 5s
+      timeout: 3s
       retries: 5
-      start_period: 10s
 
-  # ==================== BACKEND ====================
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: cloudapp-backend
-    restart: unless-stopped
-    env_file:
-      - ./backend/.env
-    ports:
-      - "8000:8000"
-    networks:
-      - cloudnet
-    depends_on:
-      db:
-        condition: service_healthy
+  item-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: item_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - item_db_data:/var/lib/postgresql/data
     healthcheck:
-      test:
-        [
-          "CMD",
-          "python",
-          "-c",
-          "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')",
-        ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 15s
+      test: ["CMD-SHELL", "pg_isready -U postgres -d item_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
-  # ==================== FRONTEND ====================
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        VITE_API_URL: https://backend-production-e9fc.up.railway.app
-    container_name: cloudapp-frontend
-    restart: unless-stopped
-    ports:
-      - "3000:80"
-    networks:
-      - cloudnet
+  # ================================
+  # BACKEND SERVICES
+  # ================================
+  auth-service:
+    build: ./services/auth-service
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@auth-db:5432/auth_db
+      SECRET_KEY: ${SECRET_KEY:-dev-secret-key-change-in-production}
+      CORS_ORIGINS: "http://localhost,http://localhost:5173"
     depends_on:
-      - backend
+      auth-db:
+        condition: service_healthy
+    restart: unless-stopped
 
-# ==================== VOLUMES ====================
+  item-service:
+    build: ./services/item-service
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@item-db:5432/item_db
+      AUTH_SERVICE_URL: http://auth-service:8001
+      CORS_ORIGINS: "http://localhost,http://localhost:5173"
+    depends_on:
+      item-db:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+    restart: unless-stopped
+
+  # ================================
+  # FRONTEND
+  # ================================
+  frontend:
+    build: ./frontend
+    environment:
+      VITE_API_URL: http://localhost
+    restart: unless-stopped
+
+  # ================================
+  # API GATEWAY
+  # ================================
+  gateway:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./services/gateway/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - auth-service
+      - item-service
+      - frontend
+    restart: unless-stopped
+
 volumes:
-  pgdata:
-    name: cloudapp-pgdata
-
-# ==================== NETWORKS ===================
-networks:
-  cloudnet:
-    name: cloudapp-network
-    driver: bridge
+  auth_db_data:
+  item_db_data:

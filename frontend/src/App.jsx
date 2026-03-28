@@ -86,8 +86,9 @@ function App() {
   // ==================== AUTH HANDLERS ====================
 
   const handleLogin = async (email, password) => {
-    const data = await login(email, password);
-    setUser(data.user);
+    await login(email, password); // token otomatis tersimpan via setToken()
+    const userData = await getMe();
+    setUser(userData);
     setIsAuthenticated(true);
   };
 
