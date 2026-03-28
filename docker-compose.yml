@@ -80,7 +80,7 @@ volumes:
   pgdata:
     name: cloudapp-pgdata
 
-# ==================== NETWORKS ====================
+# ==================== NETWORKS ===================
 networks:
   cloudnet:
     name: cloudapp-network
